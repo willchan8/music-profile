@@ -2,7 +2,7 @@ import styles from "@/styles/Home.module.css";
 import classNames from "classnames";
 import { Inter } from "next/font/google";
 import { useState, useEffect } from "react";
-import { fetchProfile, fetchTopTracks, redirectToAuthCodeFlow, getAccessToken } from "../lib/spotify";
+import { fetchProfile, fetchTopTracks, redirectToAuthCodeFlow, getAccessToken, getAccessTokenWithRefresh, setWithExpiry, getWithExpiry } from "../lib/spotify";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,25 +14,27 @@ export default function Main() {
     const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
     const params = new URLSearchParams(window.location.search);
     const authCode = params.get("code");
+    const accessToken = getWithExpiry("accessToken");
 
     const getProfile = async () => {
-      const profileData = await fetchProfile(localStorage.getItem("accessToken"));
+      const profileData = await fetchProfile(accessToken);
       setProfile(profileData);
     };
 
     const getTopTracks = async () => {
-      const topTracksData = await fetchTopTracks(localStorage.getItem("accessToken"));
+      const topTracksData = await fetchTopTracks(accessToken);
       setTopTracks(topTracksData);
     };
 
     const init = async () => {
       try {
-        if (!authCode) {
+        if (!authCode && !accessToken) {
           redirectToAuthCodeFlow(CLIENT_ID);
         } else {
-          const accessToken = await getAccessToken(CLIENT_ID, authCode);
-          if (accessToken) {
-            localStorage.setItem("accessToken", accessToken);
+          const accessTokenResponse = await getAccessToken(CLIENT_ID, authCode);
+          const { access_token, expires_in } = accessTokenResponse;
+          if (access_token) {
+            setWithExpiry("accessToken", access_token, expires_in);
           }
           getProfile();
           getTopTracks();
@@ -70,7 +72,7 @@ export default function Main() {
               <p>{item.name}</p>
               <p>
                 {item.artists.map((artist) => (
-                  <span>{artist.name}</span>
+                  <span key={artist.id}>{artist.name}</span>
                 ))}
               </p>
             </div>

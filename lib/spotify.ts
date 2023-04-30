@@ -1,7 +1,9 @@
 const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
+const REFRESH_TOKEN = process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN!;
 const BASIC_AUTH = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
 const REDIRECT_URL = "http://localhost:3000/dashboard";
+const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 
 const generateCodeVerifier = (length: number) => {
   let text = "";
@@ -51,7 +53,7 @@ export const getAccessToken = async (clientId: string, authCode: string) => {
   params.append("redirect_uri", REDIRECT_URL);
   params.append("code_verifier", codeVerifier!);
 
-  const response = await fetch("https://accounts.spotify.com/api/token", {
+  const response = await fetch(TOKEN_ENDPOINT, {
     method: "POST",
     headers: {
       Authorization: `Basic ${BASIC_AUTH}`,
@@ -60,8 +62,28 @@ export const getAccessToken = async (clientId: string, authCode: string) => {
     body: params,
   });
 
-  const { access_token } = await response.json();
-  return access_token;
+  // const { access_token } = await response.json();
+  // return access_token;
+  return await response.json();
+};
+
+export const getAccessTokenWithRefresh = async () => {
+  const params = new URLSearchParams();
+  params.append("grant_type", "refresh_token");
+  params.append("refresh_token", REFRESH_TOKEN);
+
+  const response = await fetch(TOKEN_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${BASIC_AUTH}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params,
+  });
+
+  // const { access_token } = await response.json();
+  // return access_token;
+  return await response.json();
 };
 
 export const fetchTopTracks = async (access_token: string): Promise<any> => {
@@ -84,4 +106,36 @@ export const fetchProfile = async (access_token: string): Promise<any> => {
   });
 
   return await response.json();
+};
+
+export const setWithExpiry = (key: string, value: any, ttl: number) => {
+  const now = new Date();
+
+  // `item` is an object which contains the original value
+  // as well as the time when it's supposed to expire
+  const item = {
+    value: value,
+    expiry: now.getTime() + ttl * 1000,
+  };
+  localStorage.setItem(key, JSON.stringify(item));
+};
+
+export const getWithExpiry = (key: string) => {
+  const itemStr = localStorage.getItem(key);
+  // if the item doesn't exist, return null
+  if (!itemStr) {
+    console.log("Item doesn't exist, return null");
+    return null;
+  }
+  const item = JSON.parse(itemStr);
+  const now = new Date();
+  // compare the expiry time of the item with the current time
+  if (now.getTime() > item.expiry) {
+    // If the item is expired, delete the item from storage
+    // and return null
+    localStorage.removeItem(key);
+    console.log("Item is expired, delete the item from storage");
+    return null;
+  }
+  return item.value;
 };
