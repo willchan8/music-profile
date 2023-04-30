@@ -79,13 +79,10 @@ export default function Main() {
 
   return (
     <main className={classNames(styles.main, inter.className)}>
-      <h1>Spotify Profile</h1>
+      <h1 className="my-2">Spotify Profile</h1>
       <div className={classNames(styles.card, styles.row)}>
         {profile.images && profile.images[0]?.url && <Image src={profile.images[0]?.url} alt={profile.display_name} width={100} height={100} />}
-        <div>
-          <p>Email: {profile.email}</p>
-          <p>Name: {profile.display_name}</p>
-        </div>
+        <div>Welcome, {profile.display_name}!</div>
       </div>
 
       <div className={classNames(styles.row, styles.range)}>
@@ -134,9 +131,7 @@ export default function Main() {
                 <div className={styles.imageContainer}>
                   <Image src={artist.images[2].url} alt={artist.name} width={100} height={100} />
                 </div>
-                <div>
-                  <p>{artist.name}</p>
-                </div>
+                <div>{artist.name}</div>
               </div>
             </a>
           ))}
