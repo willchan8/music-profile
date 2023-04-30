@@ -4,6 +4,14 @@ const nextConfig = {
   env: {
     JWT_SECRET: "your-jwt-secret-here",
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.scdn.co",
+      },
+    ],
+  },
   async headers() {
     return [
       {

@@ -1,5 +1,6 @@
 import styles from "@/styles/Home.module.css";
 import classNames from "classnames";
+import Image from "next/image";
 import { Inter } from "next/font/google";
 import { useState, useEffect } from "react";
 import { fetchProfile, fetchTopTracks, fetchTopArtists, redirectToAuthCodeFlow, getAccessToken, setWithExpiry, getWithExpiry } from "../lib/spotify";
@@ -80,7 +81,7 @@ export default function Main() {
     <main className={classNames(styles.main, inter.className)}>
       <h1>Spotify Profile</h1>
       <div className={classNames(styles.card, styles.row)}>
-        {profile.images && profile.images[0]?.url && <img src={profile.images[0]?.url} alt={profile.display_name} style={{ width: "100px", height: "100px" }} />}
+        {profile.images && profile.images[0]?.url && <Image src={profile.images[0]?.url} alt={profile.display_name} width={100} height={100} />}
         <div>
           <p>Email: {profile.email}</p>
           <p>Name: {profile.display_name}</p>
@@ -104,7 +105,7 @@ export default function Main() {
               <div className={styles.row}>
                 <p className="w-4 font-semibold">#{i + 1}</p>
                 <div className={styles.imageContainer}>
-                  <img className="w-full h-full" src={track.album.images[1].url} alt={track.album.name} />
+                  <Image src={track.album.images[1].url} alt={track.album.name} width={100} height={100} />
                 </div>
                 <div>
                   <span>{track.name}</span>
@@ -131,7 +132,7 @@ export default function Main() {
               <div className={styles.row}>
                 <p className="w-4 font-semibold">#{i + 1}</p>
                 <div className={styles.imageContainer}>
-                  <img className="w-full h-full" src={artist.images[2].url} alt={artist.name} style={{ width: "100px", height: "100px" }} />
+                  <Image src={artist.images[2].url} alt={artist.name} width={100} height={100} />
                 </div>
                 <div>
                   <p>{artist.name}</p>
