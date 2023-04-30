@@ -2,7 +2,7 @@ const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN!;
 const BASIC_AUTH = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
-const REDIRECT_URL = "http://localhost:3000/dashboard";
+const REDIRECT_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/spotify" : "https://nextjs-spotify-two.vercel.app/spotify";
 const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 
 const generateCodeVerifier = (length: number) => {

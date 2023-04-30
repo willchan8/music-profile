@@ -48,7 +48,7 @@ export default function Main() {
             const accessTokenResponse = await getAccessToken(CLIENT_ID, authCode);
             const { access_token, expires_in } = accessTokenResponse;
             setWithExpiry("accessToken", access_token, expires_in);
-            window.location.href = `${window.location.origin}/dashboard`;
+            window.location.replace("/spotify");
           }
         }
       } catch (error) {
@@ -102,8 +102,10 @@ export default function Main() {
           {topTracks.map((track, i) => (
             <a className={classNames(styles.card, styles.row)} key={track.id} href={track.external_urls.spotify}>
               <div className={styles.row}>
-                <p className="w-4">#{i + 1}</p>
-                <img src={track.album.images[1].url} alt={track.album.name} style={{ width: "100px", height: "100px" }} />
+                <p className="w-4 font-semibold">#{i + 1}</p>
+                <div className={styles.imageContainer}>
+                  <img className="w-full h-full" src={track.album.images[1].url} alt={track.album.name} />
+                </div>
                 <div>
                   <span>{track.name}</span>
                   <p>
@@ -127,8 +129,10 @@ export default function Main() {
           {topArtists.map((artist, i) => (
             <a className={styles.card} key={artist.id} href={artist.external_urls.spotify}>
               <div className={styles.row}>
-                <p className="w-4">#{i + 1}</p>
-                <img src={artist.images[2].url} alt={artist.name} style={{ width: "100px", height: "100px" }} />
+                <p className="w-4 font-semibold">#{i + 1}</p>
+                <div className={styles.imageContainer}>
+                  <img className="w-full h-full" src={artist.images[2].url} alt={artist.name} style={{ width: "100px", height: "100px" }} />
+                </div>
                 <div>
                   <p>{artist.name}</p>
                 </div>

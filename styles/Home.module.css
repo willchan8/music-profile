@@ -328,3 +328,18 @@
 .range {
   white-space: nowrap;
 }
+
+.imageContainer {
+  overflow: hidden;
+  min-width: 100px;
+  height: 100px;
+}
+
+.card .imageContainer > img {
+  transition: transform 0.2s;
+  transform: scale(1);
+}
+
+.card:hover .imageContainer > img {
+  transform: scale(1.1);
+}

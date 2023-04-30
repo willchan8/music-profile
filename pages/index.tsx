@@ -35,12 +35,8 @@ export default function Home() {
           </div>
         </div>
 
-        <Link className={inter.className} href={`/login`}>
-          Log In
-        </Link>
-
-        <Link className={inter.className} href={`/dashboard`}>
-          Go to Dashboard
+        <Link className={inter.className} href={`/spotify`}>
+          <button className={styles.button}>Go to Spotify App</button>
         </Link>
 
         <div className={styles.grid}>
