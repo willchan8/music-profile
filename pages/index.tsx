@@ -39,6 +39,10 @@ export default function Home() {
           Log In
         </Link>
 
+        <Link className={inter.className} href={`/dashboard`}>
+          Go to Dashboard
+        </Link>
+
         <div className={styles.grid}>
           <a href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app" className={styles.card} target="_blank" rel="noopener noreferrer">
             <h2 className={inter.className}>
