@@ -41,12 +41,12 @@ export default function Main() {
 
     const init = async () => {
       try {
-        if (!authCode && !accessToken) {
-          redirectToAuthCodeFlow(CLIENT_ID);
-        } else {
-          const accessTokenResponse = await getAccessToken(CLIENT_ID, authCode);
-          const { access_token, expires_in } = accessTokenResponse;
-          if (access_token) {
+        if (!accessToken) {
+          if (!authCode) {
+            redirectToAuthCodeFlow(CLIENT_ID);
+          } else {
+            const accessTokenResponse = await getAccessToken(CLIENT_ID, authCode);
+            const { access_token, expires_in } = accessTokenResponse;
             setWithExpiry("accessToken", access_token, expires_in);
             window.location.href = `${window.location.origin}/dashboard`;
           }
@@ -87,7 +87,7 @@ export default function Main() {
         </div>
       </div>
 
-      <div className={styles.row}>
+      <div className={classNames(styles.row, styles.range)}>
         <p>Date Range:</p>
         {Object.keys(rangeObject).map((key) => (
           <button className={styles.button} onClick={() => setRange(key)} disabled={range === key} key={key}>
@@ -100,21 +100,23 @@ export default function Main() {
         <h2 className="font-bold text-center">Top Tracks ({rangeObject[range]})</h2>
         <div className={styles.grid}>
           {topTracks.map((track, i) => (
-            <div className={classNames(styles.card, styles.row)} key={track.id}>
-              <p className="w-4">#{i + 1}</p>
-              <img src={track.album.images[1].url} alt={track.album.name} style={{ width: "100px", height: "100px" }} />
-              <div>
-                <span>{track.name}</span>
-                <p>
-                  {track.artists.map((artist, i) => {
-                    if (i > 0) {
-                      return `, ${artist.name}`;
-                    }
-                    return artist.name;
-                  })}
-                </p>
+            <a className={classNames(styles.card, styles.row)} key={track.id} href={track.external_urls.spotify}>
+              <div className={styles.row}>
+                <p className="w-4">#{i + 1}</p>
+                <img src={track.album.images[1].url} alt={track.album.name} style={{ width: "100px", height: "100px" }} />
+                <div>
+                  <span>{track.name}</span>
+                  <p>
+                    {track.artists.map((artist, i) => {
+                      if (i > 0) {
+                        return `, ${artist.name}`;
+                      }
+                      return artist.name;
+                    })}
+                  </p>
+                </div>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       </section>
@@ -123,13 +125,15 @@ export default function Main() {
         <h2 className="font-bold text-center">Top Artists ({rangeObject[range]})</h2>
         <div className={styles.grid}>
           {topArtists.map((artist, i) => (
-            <div className={classNames(styles.card, styles.row)} key={artist.id}>
-              <p className="w-4">#{i + 1}</p>
-              <img src={artist.images[2].url} alt={artist.name} style={{ width: "100px", height: "100px" }} />
-              <div>
-                <p>{artist.name}</p>
+            <a className={styles.card} key={artist.id} href={artist.external_urls.spotify}>
+              <div className={styles.row}>
+                <p className="w-4">#{i + 1}</p>
+                <img src={artist.images[2].url} alt={artist.name} style={{ width: "100px", height: "100px" }} />
+                <div>
+                  <p>{artist.name}</p>
+                </div>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       </section>
