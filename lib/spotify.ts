@@ -93,6 +93,17 @@ export const fetchTopTracks = async (access_token: string, range: string = "medi
   return await response.json();
 };
 
+export const fetchTopArtists = async (access_token: string, range: string = "medium_term"): Promise<any> => {
+  const response = await fetch(`https://api.spotify.com/v1/me/top/artists?time_range=${range}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+    },
+  });
+
+  return await response.json();
+};
+
 export const fetchProfile = async (access_token: string): Promise<any> => {
   const response = await fetch("https://api.spotify.com/v1/me", {
     method: "GET",

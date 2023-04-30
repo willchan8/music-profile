@@ -2,7 +2,7 @@ import styles from "@/styles/Home.module.css";
 import classNames from "classnames";
 import { Inter } from "next/font/google";
 import { useState, useEffect } from "react";
-import { fetchProfile, fetchTopTracks, redirectToAuthCodeFlow, getAccessToken, getAccessTokenWithRefresh, setWithExpiry, getWithExpiry } from "../lib/spotify";
+import { fetchProfile, fetchTopTracks, fetchTopArtists, redirectToAuthCodeFlow, getAccessToken, setWithExpiry, getWithExpiry } from "../lib/spotify";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,6 +15,7 @@ const rangeObject = {
 export default function Main() {
   const [profile, setProfile] = useState(null);
   const [topTracks, setTopTracks] = useState(null);
+  const [topArtists, setTopArtists] = useState(null);
   const [range, setRange] = useState("medium_term");
 
   const getProfile = async (accessToken) => {
@@ -24,7 +25,12 @@ export default function Main() {
 
   const getTopTracks = async (accessToken, range) => {
     const topTracksData = await fetchTopTracks(accessToken, range);
-    setTopTracks(topTracksData);
+    setTopTracks(topTracksData.items);
+  };
+
+  const getTopArtists = async (accessToken, range) => {
+    const topArtistsData = await fetchTopArtists(accessToken, range);
+    setTopArtists(topArtistsData.items);
   };
 
   useEffect(() => {
@@ -61,6 +67,7 @@ export default function Main() {
       }
       if (range) {
         getTopTracks(accessToken, range);
+        getTopArtists(accessToken, range);
       }
     }
   }, [range]);
@@ -80,7 +87,6 @@ export default function Main() {
         </div>
       </div>
 
-      <h3>Top Tracks ({rangeObject[range]})</h3>
       <div className={styles.row}>
         <p>Date Range:</p>
         {Object.keys(rangeObject).map((key) => (
@@ -89,22 +95,41 @@ export default function Main() {
           </button>
         ))}
       </div>
-      <div className={styles.grid}>
-        {topTracks?.items?.map((item, i) => (
-          <div className={classNames(styles.card, styles.row)} key={item.id}>
-            <p>#{i + 1}</p>
-            <img src={item.album.images[2].url} alt={item.album.name} />
-            <div>
-              <p>{item.name}</p>
-              <p>
-                {item.artists.map((artist) => (
-                  <span key={artist.id}>{artist.name}</span>
-                ))}
-              </p>
+
+      <section className={styles.section}>
+        <h2 className={styles.centerText}>Top Tracks ({rangeObject[range]})</h2>
+        <div className={styles.grid}>
+          {topTracks.map((track, i) => (
+            <div className={classNames(styles.card, styles.row)} key={track.id}>
+              <p>#{i + 1}</p>
+              <img src={track.album.images[1].url} alt={track.album.name} style={{ width: "100px", height: "100px" }} />
+              <div>
+                <p>{track.name}</p>
+                <p>
+                  {track.artists.map((artist) => (
+                    <span key={artist.id}>{artist.name}</span>
+                  ))}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.centerText}>Top Artists ({rangeObject[range]})</h2>
+        <div className={styles.grid}>
+          {topArtists.map((artist, i) => (
+            <div className={classNames(styles.card, styles.row)} key={artist.id}>
+              <p>#{i + 1}</p>
+              <img src={artist.images[2].url} alt={artist.name} style={{ width: "100px", height: "100px" }} />
+              <div>
+                <p>{artist.name}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

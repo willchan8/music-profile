@@ -308,3 +308,11 @@
   cursor: default;
   background-color: #7a8df8;
 }
+
+.section {
+  margin: 2rem 0;
+}
+
+.centerText {
+  text-align: center;
+}
