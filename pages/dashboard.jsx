@@ -72,7 +72,7 @@ export default function Main() {
     }
   }, [range]);
 
-  if (!profile || !topTracks) {
+  if (!profile || !topTracks || !topArtists) {
     return null;
   }
 
@@ -97,18 +97,21 @@ export default function Main() {
       </div>
 
       <section className={styles.section}>
-        <h2 className={styles.centerText}>Top Tracks ({rangeObject[range]})</h2>
+        <h2 className="font-bold text-center">Top Tracks ({rangeObject[range]})</h2>
         <div className={styles.grid}>
           {topTracks.map((track, i) => (
             <div className={classNames(styles.card, styles.row)} key={track.id}>
-              <p>#{i + 1}</p>
+              <p className="w-4">#{i + 1}</p>
               <img src={track.album.images[1].url} alt={track.album.name} style={{ width: "100px", height: "100px" }} />
               <div>
-                <p>{track.name}</p>
+                <span>{track.name}</span>
                 <p>
-                  {track.artists.map((artist) => (
-                    <span key={artist.id}>{artist.name}</span>
-                  ))}
+                  {track.artists.map((artist, i) => {
+                    if (i > 0) {
+                      return `, ${artist.name}`;
+                    }
+                    return artist.name;
+                  })}
                 </p>
               </div>
             </div>
@@ -117,11 +120,11 @@ export default function Main() {
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.centerText}>Top Artists ({rangeObject[range]})</h2>
+        <h2 className="font-bold text-center">Top Artists ({rangeObject[range]})</h2>
         <div className={styles.grid}>
           {topArtists.map((artist, i) => (
             <div className={classNames(styles.card, styles.row)} key={artist.id}>
-              <p>#{i + 1}</p>
+              <p className="w-4">#{i + 1}</p>
               <img src={artist.images[2].url} alt={artist.name} style={{ width: "100px", height: "100px" }} />
               <div>
                 <p>{artist.name}</p>
