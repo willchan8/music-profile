@@ -62,8 +62,6 @@ export const getAccessToken = async (clientId: string, authCode: string) => {
     body: params,
   });
 
-  // const { access_token } = await response.json();
-  // return access_token;
   return await response.json();
 };
 
@@ -81,13 +79,11 @@ export const getAccessTokenWithRefresh = async () => {
     body: params,
   });
 
-  // const { access_token } = await response.json();
-  // return access_token;
   return await response.json();
 };
 
-export const fetchTopTracks = async (access_token: string): Promise<any> => {
-  const response = await fetch("https://api.spotify.com/v1/me/top/tracks", {
+export const fetchTopTracks = async (access_token: string, range: string = "medium_term"): Promise<any> => {
+  const response = await fetch(`https://api.spotify.com/v1/me/top/tracks?time_range=${range}`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${access_token}`,

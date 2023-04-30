@@ -6,25 +6,32 @@ import { fetchProfile, fetchTopTracks, redirectToAuthCodeFlow, getAccessToken, g
 
 const inter = Inter({ subsets: ["latin"] });
 
+const rangeObject = {
+  short_term: "Last 4 Weeks",
+  medium_term: "Last 6 Months",
+  long_term: "All Time",
+};
+
 export default function Main() {
   const [profile, setProfile] = useState(null);
   const [topTracks, setTopTracks] = useState(null);
+  const [range, setRange] = useState("medium_term");
+
+  const getProfile = async (accessToken) => {
+    const profileData = await fetchProfile(accessToken);
+    setProfile(profileData);
+  };
+
+  const getTopTracks = async (accessToken, range) => {
+    const topTracksData = await fetchTopTracks(accessToken, range);
+    setTopTracks(topTracksData);
+  };
 
   useEffect(() => {
     const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
     const params = new URLSearchParams(window.location.search);
     const authCode = params.get("code");
     const accessToken = getWithExpiry("accessToken");
-
-    const getProfile = async () => {
-      const profileData = await fetchProfile(accessToken);
-      setProfile(profileData);
-    };
-
-    const getTopTracks = async () => {
-      const topTracksData = await fetchTopTracks(accessToken);
-      setTopTracks(topTracksData);
-    };
 
     const init = async () => {
       try {
@@ -35,9 +42,8 @@ export default function Main() {
           const { access_token, expires_in } = accessTokenResponse;
           if (access_token) {
             setWithExpiry("accessToken", access_token, expires_in);
+            window.location.href = `${window.location.origin}/dashboard`;
           }
-          getProfile();
-          getTopTracks();
         }
       } catch (error) {
         console.error(error);
@@ -46,6 +52,18 @@ export default function Main() {
 
     init();
   }, []);
+
+  useEffect(() => {
+    const accessToken = getWithExpiry("accessToken");
+    if (accessToken) {
+      if (!profile) {
+        getProfile(accessToken);
+      }
+      if (range) {
+        getTopTracks(accessToken, range);
+      }
+    }
+  }, [range]);
 
   if (!profile || !topTracks) {
     return null;
@@ -62,7 +80,15 @@ export default function Main() {
         </div>
       </div>
 
-      <h3>Top Tracks</h3>
+      <h3>Top Tracks ({rangeObject[range]})</h3>
+      <div className={styles.row}>
+        <p>Date Range:</p>
+        {Object.keys(rangeObject).map((key) => (
+          <button className={styles.button} onClick={() => setRange(key)} disabled={range === key} key={key}>
+            {rangeObject[key]}
+          </button>
+        ))}
+      </div>
       <div className={styles.grid}>
         {topTracks?.items?.map((item, i) => (
           <div className={classNames(styles.card, styles.row)} key={item.id}>
