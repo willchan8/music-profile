@@ -7,35 +7,128 @@ import { fetchProfile, fetchTopTracks, fetchTopArtists, redirectToAuthCodeFlow, 
 
 const inter = Inter({ subsets: ["latin"] });
 
-const rangeObject = {
+interface Image {
+  url: string;
+  height: number;
+  width: number;
+}
+
+interface Profile {
+  country: string;
+  display_name: string;
+  email: string;
+  explicit_content: {
+    filter_enabled: boolean;
+    filter_locked: boolean;
+  };
+  external_urls: {
+    spotify: string;
+  };
+  followers: {
+    href: string;
+    total: number;
+  };
+  href: string;
+  id: string;
+  images: Image[];
+  product: string;
+  type: string;
+  uri: string;
+}
+
+interface Track {
+  album: {
+    album_type: string;
+    total_tracks: number;
+    available_markets: string[];
+    external_urls: {
+      spotify: string;
+    };
+    href: string;
+    id: string;
+    images: Image[];
+    name: string;
+    release_date: string;
+    release_date_precision: string;
+    type: string;
+    uri: string;
+    artists: Artist[];
+  };
+  artists: Artist[];
+  available_markets: string[];
+  disc_number: number;
+  duration_ms: number;
+  explicit: boolean;
+  external_ids: {
+    isrc: string;
+  };
+  external_urls: {
+    spotify: string;
+  };
+  href: string;
+  id: string;
+  name: string;
+  popularity: number;
+  preview_url: string;
+  track_number: number;
+  type: string;
+  uri: string;
+  is_local: boolean;
+}
+
+interface Artist {
+  external_urls: {
+    spotify: string;
+  };
+  followers?: {
+    href: string;
+    total: number;
+  };
+  genres: string[];
+  href: string;
+  id: string;
+  images?: Image[];
+  name: string;
+  popularity?: number;
+  type: string;
+  uri: string;
+}
+
+interface Range {
+  short_term: string;
+  medium_term: string;
+  long_term: string;
+}
+
+const rangeObject: Range = {
   short_term: "Last 4 Weeks",
   medium_term: "Last 6 Months",
   long_term: "All Time",
 };
 
 export default function Main() {
-  const [profile, setProfile] = useState(null);
-  const [topTracks, setTopTracks] = useState(null);
-  const [topArtists, setTopArtists] = useState(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [topTracks, setTopTracks] = useState<Track[] | null>(null);
+  const [topArtists, setTopArtists] = useState<Artist[] | null>(null);
   const [range, setRange] = useState("medium_term");
 
-  const getProfile = async (accessToken) => {
+  const getProfile = async (accessToken: string) => {
     const profileData = await fetchProfile(accessToken);
     setProfile(profileData);
   };
 
-  const getTopTracks = async (accessToken, range) => {
+  const getTopTracks = async (accessToken: string, range: string) => {
     const topTracksData = await fetchTopTracks(accessToken, range);
     setTopTracks(topTracksData.items);
   };
 
-  const getTopArtists = async (accessToken, range) => {
+  const getTopArtists = async (accessToken: string, range: string) => {
     const topArtistsData = await fetchTopArtists(accessToken, range);
     setTopArtists(topArtistsData.items);
   };
 
   useEffect(() => {
-    const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+    const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!;
     const params = new URLSearchParams(window.location.search);
     const authCode = params.get("code");
     const accessToken = getWithExpiry("accessToken");
@@ -81,7 +174,7 @@ export default function Main() {
     <main className={classNames(styles.main, inter.className)}>
       <h1 className="my-2">Spotify Profile</h1>
       <div className={classNames(styles.card, styles.row)}>
-        {profile.images && profile.images[0]?.url && <Image src={profile.images[0]?.url} alt={profile.display_name} width={100} height={100} />}
+        {profile.images && profile.images[0]?.url && <Image src={profile.images[0]?.url} alt={profile.display_name} width={100} height={100} priority />}
         <div>Welcome, {profile.display_name}!</div>
       </div>
 
@@ -89,25 +182,25 @@ export default function Main() {
         <p>Date Range:</p>
         {Object.keys(rangeObject).map((key) => (
           <button className={styles.button} onClick={() => setRange(key)} disabled={range === key} key={key}>
-            {rangeObject[key]}
+            {rangeObject[key as keyof Range]}
           </button>
         ))}
       </div>
 
       <section className={styles.section}>
-        <h2 className="font-bold text-center">Top Tracks ({rangeObject[range]})</h2>
+        <h2 className="font-bold text-center">Top Tracks ({rangeObject[range as keyof Range]})</h2>
         <div className={styles.grid}>
           {topTracks.map((track, i) => (
             <a className={classNames(styles.card, styles.row)} key={track.id} href={track.external_urls.spotify}>
               <div className={styles.row}>
                 <p className="w-4 font-semibold">#{i + 1}</p>
                 <div className={styles.imageContainer}>
-                  <Image src={track.album.images[1].url} alt={track.album.name} width={100} height={100} />
+                  <Image src={track.album.images[1].url} alt={track.album.name} width={100} height={100} priority />
                 </div>
                 <div>
                   <span>{track.name}</span>
                   <p>
-                    {track.artists.map((artist, i) => {
+                    {track.artists.map((artist: any, i: number) => {
                       if (i > 0) {
                         return `, ${artist.name}`;
                       }
@@ -122,9 +215,9 @@ export default function Main() {
       </section>
 
       <section className={styles.section}>
-        <h2 className="font-bold text-center">Top Artists ({rangeObject[range]})</h2>
+        <h2 className="font-bold text-center">Top Artists ({rangeObject[range as keyof Range]})</h2>
         <div className={styles.grid}>
-          {topArtists.map((artist, i) => (
+          {topArtists.map((artist: any, i: number) => (
             <a className={styles.card} key={artist.id} href={artist.external_urls.spotify}>
               <div className={styles.row}>
                 <p className="w-4 font-semibold">#{i + 1}</p>
