@@ -10,6 +10,6 @@ describe("Home", () => {
 
   it("Renders button correctly", () => {
     render(<Home />);
-    expect(screen.getByRole("button")).toHaveTextContent("Go to Spotify App");
+    expect(screen.getByRole("button")).toHaveTextContent("Go to Music Profile");
   });
 });

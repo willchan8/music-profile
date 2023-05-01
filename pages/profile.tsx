@@ -142,7 +142,7 @@ export default function Main() {
             const accessTokenResponse = await getAccessToken(CLIENT_ID, authCode);
             const { access_token, expires_in } = accessTokenResponse;
             setWithExpiry("accessToken", access_token, expires_in);
-            window.location.replace("/spotify");
+            window.location.replace("/profile");
           }
         }
       } catch (error) {
