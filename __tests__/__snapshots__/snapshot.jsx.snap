@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders homepage unchanged 1`] = `
+<div>
+  <main
+    class="main"
+  >
+    <a
+      class="className"
+      href="/spotify"
+    >
+      <button
+        class="button"
+      >
+        Go to Spotify App
+      </button>
+    </a>
+  </main>
+</div>
+`;
