@@ -1,11 +1,13 @@
-const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-const CLIENT_SECRET = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
-const REFRESH_TOKEN = process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN!;
-const BASIC_AUTH = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
-const REDIRECT_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/profile" : "https://nextjs-spotify-two.vercel.app/profile";
-const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
+export const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+export const CLIENT_SECRET = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
+export const REFRESH_TOKEN = process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN!;
+export const BASIC_AUTH = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
+export const REDIRECT_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/profile" : "https://nextjs-spotify-two.vercel.app/profile";
+export const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 
-const generateCodeVerifier = (length: number) => {
+console.log(process.env.NODE_ENV);
+
+export const generateCodeVerifier = (length: number) => {
   let text = "";
   let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -15,9 +17,9 @@ const generateCodeVerifier = (length: number) => {
   return text;
 };
 
-const generateCodeChallenge = async (codeVerifier: string): Promise<string> => {
+export const generateCodeChallenge = async (codeVerifier: string): Promise<string> => {
   const data = new TextEncoder().encode(codeVerifier);
-  const digest = await crypto.subtle.digest("SHA-256", data);
+  const digest = await window.crypto.subtle.digest("SHA-256", data);
   const buffer = new Uint8Array(digest);
   const base64Url = btoa(String.fromCharCode(...buffer))
     .replace(/\+/g, "-")
@@ -26,9 +28,9 @@ const generateCodeChallenge = async (codeVerifier: string): Promise<string> => {
   return base64Url;
 };
 
-export const redirectToAuthCodeFlow = async (clientId: string) => {
+export const redirectToAuthCodeFlow = async (clientId: string, codeChallenge?: Promise<string>) => {
   const codeVerifier = generateCodeVerifier(128);
-  const challenge = await generateCodeChallenge(codeVerifier);
+  const challenge = codeChallenge ? await codeChallenge : await generateCodeChallenge(codeVerifier);
 
   localStorage.setItem("code_verifier", codeVerifier);
 
@@ -40,7 +42,8 @@ export const redirectToAuthCodeFlow = async (clientId: string) => {
   params.append("code_challenge_method", "S256");
   params.append("code_challenge", challenge);
 
-  document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
+  const win: Window = window;
+  win.location.assign(`https://accounts.spotify.com/authorize?${params.toString()}`);
 };
 
 export const getAccessToken = async (clientId: string, authCode: string) => {

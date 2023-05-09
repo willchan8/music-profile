@@ -7,15 +7,17 @@ const createJestConfig = nextJest({
 // Add any custom config to be passed to Jest
 /** @type {import('jest').Config} */
 const customJestConfig = {
+  verbose: true,
   moduleDirectories: ["node_modules", "<rootDir>/"],
   testEnvironment: "jest-environment-jsdom",
   collectCoverage: true,
-  collectCoverageFrom: ["./pages/**", "!./pages/_*", "./lib/**"],
+  collectCoverageFrom: ["./pages/**", "!./pages/_*", "!./pages/api/**", "./lib/**"],
   coverageThreshold: {
     global: {
       lines: 80,
     },
   },
+  globalSetup: "./setup.js",
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

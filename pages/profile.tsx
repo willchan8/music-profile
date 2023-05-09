@@ -106,7 +106,7 @@ const rangeObject: Range = {
   long_term: "All Time",
 };
 
-export default function Main() {
+export default function Profile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [topTracks, setTopTracks] = useState<Track[] | null>(null);
   const [topArtists, setTopArtists] = useState<Artist[] | null>(null);

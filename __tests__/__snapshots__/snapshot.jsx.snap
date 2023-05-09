@@ -1,18 +1,18 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renders homepage unchanged 1`] = `
+exports[`renders home page unchanged 1`] = `
 <div>
   <main
     class="main"
   >
     <a
       class="className"
-      href="/spotify"
+      href="/profile"
     >
       <button
         class="button"
       >
-        Go to Spotify App
+        Go to Music Profile
       </button>
     </a>
   </main>
