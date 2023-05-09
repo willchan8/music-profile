@@ -66,22 +66,22 @@ export const getAccessToken = async (clientId: string, authCode: string) => {
   return await response.json();
 };
 
-export const getAccessTokenWithRefresh = async () => {
-  const params = new URLSearchParams();
-  params.append("grant_type", "refresh_token");
-  params.append("refresh_token", REFRESH_TOKEN);
+// export const getAccessTokenWithRefresh = async () => {
+//   const params = new URLSearchParams();
+//   params.append("grant_type", "refresh_token");
+//   params.append("refresh_token", REFRESH_TOKEN);
 
-  const response = await fetch(TOKEN_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${BASIC_AUTH}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: params,
-  });
+//   const response = await fetch(TOKEN_ENDPOINT, {
+//     method: "POST",
+//     headers: {
+//       Authorization: `Basic ${BASIC_AUTH}`,
+//       "Content-Type": "application/x-www-form-urlencoded",
+//     },
+//     body: params,
+//   });
 
-  return await response.json();
-};
+//   return await response.json();
+// };
 
 export const fetchTopTracks = async (access_token: string, range: string = "medium_term"): Promise<any> => {
   const response = await fetch(`https://api.spotify.com/v1/me/top/tracks?time_range=${range}`, {
