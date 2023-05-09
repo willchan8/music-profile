@@ -5,8 +5,6 @@ export const BASIC_AUTH = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString(
 export const REDIRECT_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/profile" : "https://nextjs-spotify-two.vercel.app/profile";
 export const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 
-console.log(process.env.NODE_ENV);
-
 export const generateCodeVerifier = (length: number) => {
   let text = "";
   let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

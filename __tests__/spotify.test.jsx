@@ -86,29 +86,30 @@ describe("Spotify API tests", () => {
     expect(window.location.assign).toHaveBeenCalledWith(`https://accounts.spotify.com/authorize?${params.toString()}`);
   });
 
-  // it("should get an access token from Spotify", async () => {
-  //   const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-  //   const authCode = "test_auth_code";
-  //   localStorage.setItem("code_verifier", "test_code_verifier");
-  //   const responseJson = { access_token: "test_access_token", expires_in: 3600 };
-  //   global.fetch = jest.fn().mockResolvedValue({
-  //     json: jest.fn().mockResolvedValue(responseJson),
-  //   });
-  //   const accessToken = await getAccessToken(clientId, authCode);
-  //   expect(fetch).toHaveBeenCalledWith("https://accounts.spotify.com/api/token", {
-  //     method: "POST",
-  //     headers: {
-  //       Authorization: `Basic ${Buffer.from("CLIENT_ID:undefined").toString("base64")}`,
-  //       "Content-Type": "application/x-www-form-urlencoded",
-  //     },
-  //     body: new URLSearchParams({
-  //       client_id: CLIENT_ID,
-  //       grant_type: "authorization_code",
-  //       code: "test_auth_code",
-  //       redirect_uri: "http://localhost:3000/profile",
-  //       code_verifier: "test_code_verifier",
-  //     }),
-  //   });
-  //   expect(accessToken).toEqual(responseJson);
-  // });
+  it("should get an access token from Spotify", async () => {
+    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
+    const authCode = "test_auth_code";
+    localStorage.setItem("code_verifier", "test_code_verifier");
+    const responseJson = { access_token: "test_access_token", expires_in: 3600 };
+    global.fetch = jest.fn().mockResolvedValue({
+      json: jest.fn().mockResolvedValue(responseJson),
+    });
+    const accessToken = await getAccessToken(clientId, authCode);
+    expect(fetch).toHaveBeenCalledWith("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64").toString("base64")}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        grant_type: "authorization_code",
+        code: "test_auth_code",
+        redirect_uri: "https://nextjs-spotify-two.vercel.app/profile",
+        code_verifier: "test_code_verifier",
+      }),
+    });
+    expect(accessToken).toEqual(responseJson);
+  });
 });
