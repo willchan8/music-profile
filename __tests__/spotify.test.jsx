@@ -18,24 +18,19 @@ Object.defineProperty(global.self, "crypto", {
 
 describe("Spotify authorization and access token", () => {
   beforeAll(() => {
-    // Mock localStorage.setItem and localStorage.getItem
     const localStorageMock = (() => {
       let store = {};
       return {
         getItem: (key) => store[key],
         setItem: (key, value) => (store[key] = value.toString()),
-        removeItem: (key) => {
-          delete store[key];
-        },
+        removeItem: (key) => { delete store[key]; },
         clear: () => (store = {}),
       };
     })();
     Object.defineProperty(window, "localStorage", { value: localStorageMock });
 
     Object.defineProperty(window, "location", {
-      value: {
-        assign: jest.fn(),
-      },
+      value: { assign: jest.fn() },
       writable: true,
     });
 
@@ -44,6 +39,8 @@ describe("Spotify authorization and access token", () => {
 
   afterEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
+    window.location.assign.mockClear();
   });
 
   it("should generate a code verifier", () => {
@@ -61,39 +58,33 @@ describe("Spotify authorization and access token", () => {
 
   it("should redirect to Spotify authorization page with correct parameters", async () => {
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-    const codeVerifier = generateCodeVerifier(128);
-    const challenge = await generateCodeChallenge(codeVerifier);
-    await redirectToAuthCodeFlow(clientId, challenge);
+    await redirectToAuthCodeFlow(clientId);
 
-    expect(localStorage.getItem("code_verifier")).toBeDefined();
+    expect(sessionStorage.getItem("code_verifier")).toBeTruthy();
 
-    const params = new URLSearchParams();
-    params.append("client_id", clientId);
-    params.append("response_type", "code");
-    params.append("redirect_uri", "https://nextjs-spotify-two.vercel.app/profile");
-    params.append("scope", "user-read-private user-read-email user-top-read");
-    params.append("code_challenge_method", "S256");
-    params.append("code_challenge", challenge);
-
-    expect(window.location.assign).toHaveBeenCalledWith(`https://accounts.spotify.com/authorize?${params.toString()}`);
+    const assignedUrl = window.location.assign.mock.calls[0][0];
+    const url = new URL(assignedUrl);
+    expect(url.origin + url.pathname).toBe("https://accounts.spotify.com/authorize");
+    expect(url.searchParams.get("client_id")).toBe(clientId);
+    expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("scope")).toBe("user-read-private user-read-email user-top-read");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(url.searchParams.get("code_challenge")).toBeTruthy();
   });
 
   it("should get an access token from Spotify", async () => {
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-    const clientSecret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
     const authCode = "test_auth_code";
-    localStorage.setItem("code_verifier", "test_code_verifier");
+    sessionStorage.setItem("code_verifier", "test_code_verifier");
     const responseJson = { access_token: "test_access_token", expires_in: 3600 };
     global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
       json: jest.fn().mockResolvedValue(responseJson),
     });
     const accessToken = await getAccessToken(clientId, authCode);
     expect(fetch).toHaveBeenCalledWith("https://accounts.spotify.com/api/token", {
       method: "POST",
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64").toString("base64")}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         client_id: clientId,
         grant_type: "authorization_code",
@@ -108,15 +99,12 @@ describe("Spotify authorization and access token", () => {
 
 describe("setWithExpiry and getWithExpiry", () => {
   beforeAll(() => {
-    // Mock localStorage.setItem and localStorage.getItem
     const localStorageMock = (() => {
       let store = {};
       return {
         getItem: (key) => store[key],
         setItem: (key, value) => (store[key] = value.toString()),
-        removeItem: (key) => {
-          delete store[key];
-        },
+        removeItem: (key) => { delete store[key]; },
         clear: () => (store = {}),
       };
     })();
@@ -130,7 +118,7 @@ describe("setWithExpiry and getWithExpiry", () => {
   it("should store an item with expiry and retrieve it", () => {
     const key = "test_key";
     const value = "test_value";
-    const ttl = 60; // seconds
+    const ttl = 60;
     setWithExpiry(key, value, ttl);
 
     const retrievedValue = getWithExpiry(key);
@@ -141,10 +129,9 @@ describe("setWithExpiry and getWithExpiry", () => {
   it("should return null when getting an expired item", () => {
     const key = "test_key";
     const value = "test_value";
-    const ttl = 1; // second
+    const ttl = 1;
     setWithExpiry(key, value, ttl);
 
-    // Wait for the item to expire
     return new Promise((resolve) => {
       setTimeout(() => {
         const retrievedValue = getWithExpiry(key);
@@ -162,12 +149,6 @@ describe("setWithExpiry and getWithExpiry", () => {
 });
 
 describe("fetchTopTracks", () => {
-  beforeEach(() => {
-    global.fetch = jest.fn().mockResolvedValue({
-      json: jest.fn().mockResolvedValue({ tracks: [] }),
-    });
-  });
-
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -176,21 +157,25 @@ describe("fetchTopTracks", () => {
     const access_token = "test_access_token";
     const range = "short_term";
     const expectedUrl = `https://api.spotify.com/v1/me/top/tracks?time_range=${range}`;
-    const expectedHeaders = { Authorization: `Bearer ${access_token}` };
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({ items: [] }),
+    });
 
     await fetchTopTracks(access_token, range);
 
     expect(fetch).toHaveBeenCalledWith(expectedUrl, {
-      method: "GET",
-      headers: expectedHeaders,
+      headers: { Authorization: `Bearer ${access_token}` },
     });
   });
 
-  it("should return the user profile data from Spotify API", async () => {
+  it("should return the top tracks data from Spotify API", async () => {
     const access_token = "test_access_token";
     const range = "short_term";
     const responseJson = { tracks: [{ name: "Test Track" }] };
     global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
       json: jest.fn().mockResolvedValue(responseJson),
     });
 
@@ -215,6 +200,7 @@ describe("fetchTopArtists", () => {
 
   beforeEach(() => {
     global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
       json: jest.fn().mockResolvedValue(responseJson),
     });
   });
@@ -223,7 +209,6 @@ describe("fetchTopArtists", () => {
     await fetchTopArtists(access_token, range);
 
     expect(fetch).toHaveBeenCalledWith(`https://api.spotify.com/v1/me/top/artists?time_range=${range}`, {
-      method: "GET",
       headers: {
         Authorization: `Bearer ${access_token}`,
       },
@@ -243,6 +228,7 @@ describe("fetchProfile", () => {
 
   beforeEach(() => {
     global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
       json: jest.fn().mockResolvedValue(responseJson),
     });
   });
@@ -251,7 +237,6 @@ describe("fetchProfile", () => {
     await fetchProfile(access_token);
 
     expect(fetch).toHaveBeenCalledWith("https://api.spotify.com/v1/me", {
-      method: "GET",
       headers: {
         Authorization: `Bearer ${access_token}`,
       },

@@ -3,13 +3,13 @@ import Home from "../pages/index";
 import "@testing-library/jest-dom";
 
 describe("Home", () => {
-  it("Renders button without crashing", () => {
+  it("Renders CTA link without crashing", () => {
     render(<Home />);
-    expect(screen.getByRole("button")).toBeInTheDocument();
+    expect(screen.getByText("View My Profile")).toBeInTheDocument();
   });
 
-  it("Renders button correctly", () => {
+  it("Renders CTA link with correct text", () => {
     render(<Home />);
-    expect(screen.getByRole("button")).toHaveTextContent("Go to Music Profile");
+    expect(screen.getByText("View My Profile")).toBeInTheDocument();
   });
 });
