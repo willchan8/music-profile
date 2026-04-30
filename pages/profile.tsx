@@ -1,15 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import {
-  fetchProfile,
-  fetchTopTracks,
-  fetchTopArtists,
-  redirectToAuthCodeFlow,
-  getAccessToken,
-  setWithExpiry,
-  getWithExpiry,
-} from "../lib/spotify";
+import { fetchProfile, fetchTopTracks, fetchTopArtists } from "../lib/spotify";
+import { useSpotifyAuth } from "../lib/useSpotifyAuth";
 
 interface SpotifyImage {
   url: string;
@@ -131,72 +124,37 @@ function LoadingScreen() {
 }
 
 export default function Profile() {
+  const auth = useSpotifyAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [topTracks, setTopTracks] = useState<Track[] | null>(null);
   const [topArtists, setTopArtists] = useState<Artist[] | null>(null);
   const [range, setRange] = useState("medium_term");
 
-  const getProfile = async (accessToken: string) => {
-    const profileData = await fetchProfile(accessToken);
-    setProfile(profileData);
-  };
-
-  const getTopTracks = async (accessToken: string, range: string) => {
-    const topTracksData = await fetchTopTracks(accessToken, range);
-    setTopTracks(topTracksData.items);
-  };
-
-  const getTopArtists = async (accessToken: string, range: string) => {
-    const topArtistsData = await fetchTopArtists(accessToken, range);
-    setTopArtists(topArtistsData.items);
-  };
-
+  // Fetch profile once on first auth
   useEffect(() => {
-    const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!;
-    const params = new URLSearchParams(window.location.search);
-    const authCode = params.get("code");
-    const accessToken = getWithExpiry("accessToken");
+    if (auth.status !== "authenticated" || profile) return;
+    fetchProfile(auth.accessToken).then(setProfile).catch(console.error);
+  }, [auth.status]);
 
-    const init = async () => {
-      try {
-        if (!accessToken) {
-          if (!authCode) {
-            redirectToAuthCodeFlow(CLIENT_ID);
-          } else {
-            const accessTokenResponse = await getAccessToken(CLIENT_ID, authCode);
-            const { access_token, expires_in } = accessTokenResponse;
-            if (!access_token) {
-              console.error("Token exchange failed:", accessTokenResponse);
-              redirectToAuthCodeFlow(CLIENT_ID);
-              return;
-            }
-            setWithExpiry("accessToken", access_token, expires_in);
-            window.location.replace("/profile");
-          }
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    init();
-  }, []);
-
+  // Fetch tracks + artists whenever auth is ready or range changes
   useEffect(() => {
-    const accessToken = getWithExpiry("accessToken");
-    if (accessToken) {
-      if (!profile) {
-        getProfile(accessToken);
-      }
-      if (range) {
-        getTopTracks(accessToken, range);
-        getTopArtists(accessToken, range);
-      }
-    }
-  }, [range]);
+    if (auth.status !== "authenticated") return;
+    Promise.all([
+      fetchTopTracks(auth.accessToken, range).then((d) => setTopTracks(d.items)),
+      fetchTopArtists(auth.accessToken, range).then((d) => setTopArtists(d.items)),
+    ]).catch(console.error);
+  }, [auth.status, range]);
 
-  if (!profile || !topTracks || !topArtists) {
+  if (auth.status === "loading" || !profile || !topTracks || !topArtists) {
     return <LoadingScreen />;
+  }
+
+  if (auth.status === "error") {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <p className="text-[#f3727f] text-sm font-bold">{auth.message}</p>
+      </div>
+    );
   }
 
   const profileImageUrl = profile.images?.[0]?.url;

@@ -26,43 +26,48 @@ export const generateCodeChallenge = async (codeVerifier: string): Promise<strin
   return base64Url;
 };
 
-export const redirectToAuthCodeFlow = async (clientId: string, codeChallenge?: Promise<string>) => {
+export const redirectToAuthCodeFlow = async (clientId: string) => {
   const codeVerifier = generateCodeVerifier(128);
-  const challenge = codeChallenge ? await codeChallenge : await generateCodeChallenge(codeVerifier);
+  const challenge = await generateCodeChallenge(codeVerifier);
 
-  localStorage.setItem("code_verifier", codeVerifier);
+  sessionStorage.setItem("code_verifier", codeVerifier);
 
-  const params = new URLSearchParams();
-  params.append("client_id", clientId);
-  params.append("response_type", "code");
-  params.append("redirect_uri", REDIRECT_URL);
-  params.append("scope", "user-read-private user-read-email user-top-read");
-  params.append("code_challenge_method", "S256");
-  params.append("code_challenge", challenge);
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: "code",
+    redirect_uri: REDIRECT_URL,
+    scope: "user-read-private user-read-email user-top-read",
+    code_challenge_method: "S256",
+    code_challenge: challenge,
+  });
 
-  const win: Window = window;
-  win.location.assign(`https://accounts.spotify.com/authorize?${params.toString()}`);
+  window.location.assign(`https://accounts.spotify.com/authorize?${params}`);
 };
 
-export const getAccessToken = async (clientId: string, authCode: string) => {
-  const codeVerifier = localStorage.getItem("code_verifier");
+export const getAccessToken = async (clientId: string, code: string) => {
+  const codeVerifier = sessionStorage.getItem("code_verifier");
 
-  const params = new URLSearchParams();
-  params.append("client_id", clientId);
-  params.append("grant_type", "authorization_code");
-  params.append("code", authCode);
-  params.append("redirect_uri", REDIRECT_URL);
-  params.append("code_verifier", codeVerifier!);
+  const params = new URLSearchParams({
+    client_id: clientId,
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: REDIRECT_URL,
+    code_verifier: codeVerifier!,
+  });
 
   const response = await fetch(TOKEN_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params,
   });
 
-  return await response.json();
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error_description ?? data.error ?? "Token request failed");
+  }
+
+  sessionStorage.removeItem("code_verifier");
+  return data;
 };
 
 // export const getAccessTokenWithRefresh = async () => {
