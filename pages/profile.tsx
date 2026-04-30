@@ -171,23 +171,34 @@ export default function Profile() {
             </span>
           </span>
         </Link>
-        {profileImageUrl && (
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-bold text-white hidden sm:block">
-              {profile.display_name}
-            </span>
-            <div className="w-8 h-8 rounded-full overflow-hidden">
-              <Image
-                src={profileImageUrl}
-                alt={profile.display_name}
-                width={32}
-                height={32}
-                className="w-full h-full object-cover"
-                priority
-              />
-            </div>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              localStorage.removeItem("accessToken");
+              window.location.href = "/";
+            }}
+            className="px-4 py-2 rounded-full text-sm font-bold uppercase tracking-[1.4px] bg-[#1f1f1f] text-[#b3b3b3] hover:text-white hover:bg-[#282828] transition-all cursor-pointer"
+          >
+            Log Out
+          </button>
+          {profileImageUrl && (
+            <>
+              <span className="text-sm font-bold text-white hidden sm:block">
+                {profile.display_name}
+              </span>
+              <div className="w-8 h-8 rounded-full overflow-hidden">
+                <Image
+                  src={profileImageUrl}
+                  alt={profile.display_name}
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                  priority
+                />
+              </div>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Profile header with gradient */}
