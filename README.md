@@ -1,38 +1,81 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Music Profile
+
+A Spotify-style web app that displays your personalized music stats — top tracks and top artists across different time ranges. Built with Next.js and the Spotify Web API.
+
+## Features
+
+- View your top tracks and artists for the last 4 weeks, 6 months, or all time
+- Spotify-style dark UI with your profile info, follower count, and avatar
+- Secure OAuth 2.0 login via the PKCE flow (no client secret required)
+- Token stored locally and refreshed automatically on expiry
+
+## Tech Stack
+
+- [Next.js 13](https://nextjs.org/) (Pages Router)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Spotify Web API](https://developer.spotify.com/documentation/web-api)
 
 ## Getting Started
 
-First, run the development server:
+### 1. Create a Spotify App
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Create a new app
+3. Under **Settings**, add the following Redirect URI:
+   ```
+   http://127.0.0.1:3000/profile
+   ```
+4. Copy your **Client ID**
+
+### 2. Configure Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```env
+NEXT_PUBLIC_SPOTIFY_CLIENT_ID=your_client_id_here
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Install Dependencies and Run
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000) in your browser.
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+> **Note:** Use `127.0.0.1` instead of `localhost` — Spotify's redirect URI policy requires it.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Deployment
 
-## Learn More
+This project is deployed on [Vercel](https://vercel.com). To deploy your own:
 
-To learn more about Next.js, take a look at the following resources:
+1. Push the repo to GitHub
+2. Import it in Vercel
+3. Add `NEXT_PUBLIC_SPOTIFY_CLIENT_ID` to your project's **Environment Variables** in Vercel settings
+4. Add your production URL as a Redirect URI in the Spotify Developer Dashboard:
+   ```
+   https://your-app.vercel.app/profile
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Vercel auto-deploys on every push to `main`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+├── pages/
+│   ├── index.tsx        # Landing page
+│   └── profile.tsx      # Authenticated profile page
+├── lib/
+│   ├── spotify.ts       # Spotify API helpers and PKCE auth utilities
+│   └── useSpotifyAuth.ts # Custom hook for auth state management
+└── styles/
+    └── globals.css      # Global styles and CSS variables
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Running Tests
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```bash
+npm test
+```
