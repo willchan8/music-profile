@@ -34,7 +34,7 @@ export const redirectToAuthCodeFlow = async (clientId: string) => {
     client_id: clientId,
     response_type: "code",
     redirect_uri: REDIRECT_URL,
-    scope: "user-read-private user-read-email user-top-read",
+    scope: "user-read-private user-read-email user-top-read user-read-recently-played",
     code_challenge_method: "S256",
     code_challenge: challenge,
   });
@@ -114,6 +114,9 @@ export const fetchTopArtists = (accessToken: string, range = "medium_term") =>
 
 export const fetchProfile = (accessToken: string) =>
   apiFetch("https://api.spotify.com/v1/me", accessToken);
+
+export const fetchRecentlyPlayed = (accessToken: string, limit = 20) =>
+  apiFetch(`https://api.spotify.com/v1/me/player/recently-played?limit=${limit}`, accessToken);
 
 export const setWithExpiry = (key: string, value: any, ttl: number) => {
   const item = {
