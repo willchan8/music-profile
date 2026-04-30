@@ -1,5 +1,74 @@
 import Head from "next/head";
 import Link from "next/link";
+import Image from "next/image";
+import { GetStaticProps } from "next";
+
+interface TopArtist {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  spotifyUrl: string;
+}
+
+interface HomeProps {
+  artists: TopArtist[];
+}
+
+export const getStaticProps: GetStaticProps<HomeProps> = async () => {
+  try {
+    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+
+    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+      },
+      body: new URLSearchParams({ grant_type: "client_credentials" }),
+    });
+    const tokenData = await tokenRes.json();
+    if (!tokenRes.ok) throw new Error(tokenData.error_description ?? "Token request failed");
+    const access_token: string = tokenData.access_token;
+
+    const releasesRes = await fetch(
+      "https://api.spotify.com/v1/browse/new-releases?limit=20",
+      { headers: { Authorization: `Bearer ${access_token}` } }
+    );
+    const releases = await releasesRes.json();
+
+    const seen = new Set<string>();
+    const artistIds: string[] = [];
+    for (const album of releases.albums?.items ?? []) {
+      for (const artist of album.artists ?? []) {
+        if (artist?.id && !seen.has(artist.id)) {
+          seen.add(artist.id);
+          artistIds.push(artist.id);
+        }
+      }
+    }
+
+    const artistsRes = await fetch(
+      `https://api.spotify.com/v1/artists?ids=${artistIds.slice(0, 10).join(",")}`,
+      { headers: { Authorization: `Bearer ${access_token}` } }
+    );
+    const artistsData = await artistsRes.json();
+
+    const artists: TopArtist[] = (artistsData.artists ?? [])
+      .sort((a: any, b: any) => b.popularity - a.popularity)
+      .slice(0, 5)
+      .map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        imageUrl: a.images?.[1]?.url ?? a.images?.[0]?.url ?? null,
+        spotifyUrl: a.external_urls?.spotify ?? "",
+      }));
+
+    return { props: { artists }, revalidate: 3600 };
+  } catch {
+    return { props: { artists: [] }, revalidate: 60 };
+  }
+};
 
 function SpotifyLogo() {
   return (
@@ -12,15 +81,7 @@ function SpotifyLogo() {
   );
 }
 
-const artistImages = [
-  { src: "/images/ariana.png", name: "Ariana Grande" },
-  { src: "/images/blackpink.png", name: "BLACKPINK" },
-  { src: "/images/weeknd.png", name: "The Weeknd" },
-  { src: "/images/taylorswift.png", name: "Taylor Swift" },
-  { src: "/images/zedd.png", name: "Zedd" },
-];
-
-export default function Home() {
+export default function Home({ artists }: HomeProps) {
   return (
     <>
       <Head>
@@ -31,7 +92,6 @@ export default function Home() {
       </Head>
 
       <div className="min-h-screen bg-[#121212] text-white flex flex-col">
-        {/* Navigation */}
         <nav className="flex items-center justify-between px-8 py-6">
           <div className="flex items-center gap-3">
             <SpotifyLogo />
@@ -44,9 +104,7 @@ export default function Home() {
           </Link>
         </nav>
 
-        {/* Hero */}
         <main className="flex-1 flex items-center justify-between px-8 lg:px-16 py-8 max-w-7xl mx-auto w-full gap-12">
-          {/* Left: copy */}
           <div className="flex-1">
             <h1 className="text-6xl lg:text-7xl font-bold leading-none tracking-tight">
               Music<br />to your<br />
@@ -62,40 +120,42 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Right: artist image circles */}
-          <div className="hidden md:flex flex-col items-center gap-4 flex-shrink-0">
-            <div className="flex gap-4">
-              {artistImages.slice(0, 3).map((artist) => (
-                <div
-                  key={artist.name}
-                  className="w-36 h-36 lg:w-44 lg:h-44 rounded-full overflow-hidden shadow-[rgba(0,0,0,0.5)_0px_8px_24px] hover:scale-105 transition-transform duration-200"
-                >
-                  <img
-                    src={artist.src}
-                    alt={artist.name}
-                    className="w-full h-full object-cover object-top"
-                  />
+          {artists.length > 0 && (
+            <div className="hidden md:flex flex-col items-center gap-4 flex-shrink-0">
+              {[artists.slice(0, 3), artists.slice(3)].map((row, i) => (
+                <div key={i} className="flex gap-4">
+                  {row.map((artist) => (
+                    <a
+                      key={artist.id}
+                      href={artist.spotifyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative w-36 h-36 lg:w-44 lg:h-44 rounded-full overflow-hidden shadow-[rgba(0,0,0,0.5)_0px_8px_24px] flex-shrink-0 hover:scale-105 transition-transform duration-300"
+                    >
+                      {artist.imageUrl ? (
+                        <Image
+                          src={artist.imageUrl}
+                          alt={artist.name}
+                          width={176}
+                          height={176}
+                          className="w-full h-full object-cover group-hover:opacity-40 transition-opacity duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-[#282828]" />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-2">
+                        <span className="text-white font-bold text-xs text-center leading-tight drop-shadow-lg uppercase tracking-wide">
+                          {artist.name}
+                        </span>
+                      </div>
+                    </a>
+                  ))}
                 </div>
               ))}
             </div>
-            <div className="flex gap-4">
-              {artistImages.slice(3).map((artist) => (
-                <div
-                  key={artist.name}
-                  className="w-36 h-36 lg:w-44 lg:h-44 rounded-full overflow-hidden shadow-[rgba(0,0,0,0.5)_0px_8px_24px] hover:scale-105 transition-transform duration-200"
-                >
-                  <img
-                    src={artist.src}
-                    alt={artist.name}
-                    className="w-full h-full object-cover object-top"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </main>
 
-        {/* Footer */}
         <footer className="px-8 py-6 border-t border-[#282828]">
           <p className="text-[#b3b3b3] text-xs text-center">
             Powered by Spotify API. Not affiliated with Spotify AB.
