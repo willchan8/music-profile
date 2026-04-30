@@ -2,7 +2,7 @@ export const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
 export const CLIENT_SECRET = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
 export const REFRESH_TOKEN = process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN!;
 export const BASIC_AUTH = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
-export const REDIRECT_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000/profile" : "https://nextjs-spotify-two.vercel.app/profile";
+export const REDIRECT_URL = process.env.NODE_ENV === "development" ? "http://127.0.0.1:3000/profile" : "https://nextjs-spotify-two.vercel.app/profile";
 export const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 
 export const generateCodeVerifier = (length: number) => {
@@ -57,7 +57,6 @@ export const getAccessToken = async (clientId: string, authCode: string) => {
   const response = await fetch(TOKEN_ENDPOINT, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${BASIC_AUTH}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: params,
