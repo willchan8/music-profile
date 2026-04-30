@@ -7,14 +7,20 @@ A Spotify-style web app that displays your personalized music stats — top trac
 - View your top tracks and artists for the last 4 weeks, 6 months, or all time
 - Spotify-style dark UI with your profile info, follower count, and avatar
 - Secure OAuth 2.0 login via the PKCE flow (no client secret required)
-- Token stored locally and refreshed automatically on expiry
+- Silent token refresh — sessions survive access token expiry without re-login
+- Rate limit handling with automatic retry on 429 responses
+- Log out button that clears all stored tokens
 
 ## Tech Stack
 
-- [Next.js 13](https://nextjs.org/) (Pages Router)
+- [Next.js 16](https://nextjs.org/) (Pages Router)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Spotify Web API](https://developer.spotify.com/documentation/web-api)
+
+## Requirements
+
+- Node.js 20 or later
 
 ## Getting Started
 
@@ -60,6 +66,8 @@ This project is deployed on [Vercel](https://vercel.com). To deploy your own:
    ```
 
 Vercel auto-deploys on every push to `main`.
+
+> **Node.js version:** In your Vercel project settings, set the Node.js version to **22.x** or later under **Settings → General → Node.js Version**.
 
 ## Project Structure
 
