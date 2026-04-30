@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { redirectToAuthCodeFlow, getAccessToken, setWithExpiry, getWithExpiry } from "./spotify";
+import { redirectToAuthCodeFlow, getAccessToken, refreshAccessToken, setWithExpiry, getWithExpiry } from "./spotify";
 
 type AuthState =
   | { status: "loading" }
@@ -20,13 +20,27 @@ export function useSpotifyAuth(): AuthState {
         return;
       }
 
+      // Access token expired — try to refresh silently
+      const storedRefreshToken = localStorage.getItem("refreshToken");
+      if (storedRefreshToken) {
+        try {
+          const { access_token, refresh_token, expires_in } = await refreshAccessToken(CLIENT_ID, storedRefreshToken);
+          setWithExpiry("accessToken", access_token, expires_in);
+          if (refresh_token) localStorage.setItem("refreshToken", refresh_token);
+          setState({ status: "authenticated", accessToken: access_token });
+          return;
+        } catch {
+          localStorage.removeItem("refreshToken");
+        }
+      }
+
       // Returning from Spotify with an auth code
       const code = new URLSearchParams(window.location.search).get("code");
       if (code) {
         try {
-          const { access_token, expires_in } = await getAccessToken(CLIENT_ID, code);
+          const { access_token, refresh_token, expires_in } = await getAccessToken(CLIENT_ID, code);
           setWithExpiry("accessToken", access_token, expires_in);
-          // Clean the code from the URL without a full page reload
+          if (refresh_token) localStorage.setItem("refreshToken", refresh_token);
           window.history.replaceState({}, "", "/profile");
           setState({ status: "authenticated", accessToken: access_token });
         } catch (err) {
