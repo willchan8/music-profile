@@ -129,30 +129,34 @@ export default function Profile() {
   const [topTracks, setTopTracks] = useState<Track[] | null>(null);
   const [topArtists, setTopArtists] = useState<Artist[] | null>(null);
   const [range, setRange] = useState("medium_term");
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Fetch profile once on first auth
   useEffect(() => {
     if (auth.status !== "authenticated" || profile) return;
-    fetchProfile(auth.accessToken).then(setProfile).catch(console.error);
+    fetchProfile(auth.accessToken)
+      .then(setProfile)
+      .catch((err: unknown) => setFetchError(err instanceof Error ? err.message : "Failed to load profile"));
   }, [auth.status]);
 
   // Fetch tracks + artists whenever auth is ready or range changes
   useEffect(() => {
     if (auth.status !== "authenticated") return;
+    setFetchError(null);
     Promise.all([
       fetchTopTracks(auth.accessToken, range).then((d) => setTopTracks(d.items)),
       fetchTopArtists(auth.accessToken, range).then((d) => setTopArtists(d.items)),
-    ]).catch(console.error);
+    ]).catch((err: unknown) => setFetchError(err instanceof Error ? err.message : "Failed to load data"));
   }, [auth.status, range]);
 
   if (auth.status === "loading" || !profile || !topTracks || !topArtists) {
     return <LoadingScreen />;
   }
 
-  if (auth.status === "error") {
+  if (auth.status === "error" || fetchError) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
-        <p className="text-[#f3727f] text-sm font-bold">{auth.message}</p>
+        <p className="text-[#f3727f] text-sm font-bold">{auth.status === "error" ? auth.message : fetchError}</p>
       </div>
     );
   }
@@ -175,6 +179,7 @@ export default function Profile() {
           <button
             onClick={() => {
               localStorage.removeItem("accessToken");
+              localStorage.removeItem("refreshToken");
               window.location.href = "/";
             }}
             className="px-4 py-2 rounded-full text-sm font-bold uppercase tracking-[1.4px] bg-[#1f1f1f] text-[#b3b3b3] hover:text-white hover:bg-[#282828] transition-all cursor-pointer"

@@ -1,14 +1,13 @@
 export const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-export const CLIENT_SECRET = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
-export const REFRESH_TOKEN = process.env.NEXT_PUBLIC_SPOTIFY_REFRESH_TOKEN!;
-export const BASIC_AUTH = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
-export const REDIRECT_URL = process.env.NODE_ENV === "development" ? "http://127.0.0.1:3000/profile" : "https://nextjs-spotify-two.vercel.app/profile";
+export const REDIRECT_URL =
+  process.env.NODE_ENV === "development"
+    ? "http://127.0.0.1:3000/profile"
+    : "https://nextjs-spotify-two.vercel.app/profile";
 export const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 
 export const generateCodeVerifier = (length: number) => {
   let text = "";
-  let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   for (let i = 0; i < length; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
@@ -19,11 +18,10 @@ export const generateCodeChallenge = async (codeVerifier: string): Promise<strin
   const data = new TextEncoder().encode(codeVerifier);
   const digest = await window.crypto.subtle.digest("SHA-256", data);
   const buffer = new Uint8Array(digest);
-  const base64Url = btoa(String.fromCharCode(...buffer))
+  return btoa(String.fromCharCode(...buffer))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-  return base64Url;
 };
 
 export const redirectToAuthCodeFlow = async (clientId: string) => {
@@ -70,83 +68,67 @@ export const getAccessToken = async (clientId: string, code: string) => {
   return data;
 };
 
-// export const getAccessTokenWithRefresh = async () => {
-//   const params = new URLSearchParams();
-//   params.append("grant_type", "refresh_token");
-//   params.append("refresh_token", REFRESH_TOKEN);
-
-//   const response = await fetch(TOKEN_ENDPOINT, {
-//     method: "POST",
-//     headers: {
-//       Authorization: `Basic ${BASIC_AUTH}`,
-//       "Content-Type": "application/x-www-form-urlencoded",
-//     },
-//     body: params,
-//   });
-
-//   return await response.json();
-// };
-
-export const fetchTopTracks = async (access_token: string, range: string = "medium_term"): Promise<any> => {
-  const response = await fetch(`https://api.spotify.com/v1/me/top/tracks?time_range=${range}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
+export const refreshAccessToken = async (clientId: string, refreshToken: string) => {
+  const params = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    client_id: clientId,
   });
 
-  return await response.json();
-};
-
-export const fetchTopArtists = async (access_token: string, range: string = "medium_term"): Promise<any> => {
-  const response = await fetch(`https://api.spotify.com/v1/me/top/artists?time_range=${range}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
+  const response = await fetch(TOKEN_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params,
   });
 
-  return await response.json();
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error_description ?? data.error ?? "Token refresh failed");
+  }
+  return data;
 };
 
-export const fetchProfile = async (access_token: string): Promise<any> => {
-  const response = await fetch("https://api.spotify.com/v1/me", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
+async function apiFetch(url: string, accessToken: string, retries = 3): Promise<any> {
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
 
-  return await response.json();
-};
+  if (response.status === 429 && retries > 0) {
+    const retryAfter = parseInt(response.headers.get("Retry-After") ?? "1", 10);
+    await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+    return apiFetch(url, accessToken, retries - 1);
+  }
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error?.message ?? `Request failed: ${response.status}`);
+  }
+  return data;
+}
+
+export const fetchTopTracks = (accessToken: string, range = "medium_term") =>
+  apiFetch(`https://api.spotify.com/v1/me/top/tracks?time_range=${range}`, accessToken);
+
+export const fetchTopArtists = (accessToken: string, range = "medium_term") =>
+  apiFetch(`https://api.spotify.com/v1/me/top/artists?time_range=${range}`, accessToken);
+
+export const fetchProfile = (accessToken: string) =>
+  apiFetch("https://api.spotify.com/v1/me", accessToken);
 
 export const setWithExpiry = (key: string, value: any, ttl: number) => {
-  const now = new Date();
-
-  // `item` is an object which contains the original value
-  // as well as the time when it's supposed to expire
   const item = {
-    value: value,
-    expiry: now.getTime() + ttl * 1000,
+    value,
+    expiry: Date.now() + ttl * 1000,
   };
   localStorage.setItem(key, JSON.stringify(item));
 };
 
 export const getWithExpiry = (key: string) => {
   const itemStr = localStorage.getItem(key);
-  // if the item doesn't exist, return null
-  if (!itemStr) {
-    console.log("Item doesn't exist, return null");
-    return null;
-  }
+  if (!itemStr) return null;
   const item = JSON.parse(itemStr);
-  const now = new Date();
-  // compare the expiry time of the item with the current time
-  if (now.getTime() > item.expiry) {
-    // If the item is expired, delete the item from storage
-    // and return null
+  if (Date.now() > item.expiry) {
     localStorage.removeItem(key);
-    console.log("Item is expired, delete the item from storage");
     return null;
   }
   return item.value;
